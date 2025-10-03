@@ -1,0 +1,14 @@
+fastapi
+uvicorn
+pydantic
+sqlalchemy
+psycopg2-binary
+elasticsearch
+sentence-transformers
+scikit-learn
+numpy
+pandas
+pdfplumber
+python-docx
+beautifulsoup4
+requests
