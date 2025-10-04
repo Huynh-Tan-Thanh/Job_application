@@ -49,3 +49,25 @@ npm run dev
 - Connect the frontend upload flow to `/candidates/upload` and the matching results endpoint.
 
 Set `EMBEDDING_BACKEND=sentence-transformer` to use a SentenceTransformer model (default `all-MiniLM-L6-v2`), or leave unset to fall back to a lightweight hashed embedding that keeps tests fast.
+
+## Staging Environment Setup
+
+To run the staging environment locally using Docker:
+
+1. Ensure Docker and Docker Compose are installed on your system.
+2. Copy the `.env.example` file to `.env` and update the values as needed.
+3. Build and start the services:
+
+   ```bash
+   docker-compose up --build
+   ```
+
+4. Access the services:
+   - Backend: [http://localhost:8000](http://localhost:8000)
+   - Frontend: [http://localhost:3000](http://localhost:3000)
+
+5. To stop the services:
+
+   ```bash
+   docker-compose down
+   ```
