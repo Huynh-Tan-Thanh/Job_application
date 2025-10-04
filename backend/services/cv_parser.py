@@ -1,27 +1,78 @@
-import io, re
-from fastapi import UploadFile
-from typing import Tuple, List, Optional
-from pdfminer.high_level import extract_text as pdf_text
+from __future__ import annotations
 
-SKILL_DICT = {"python","java","javascript","react","node","sql","postgresql","fastapi","docker","aws","gcp","kubernetes"}
+import io
+import re
+from typing import List, Optional, Tuple
+
+import pdfplumber
+from docx import Document
+from fastapi import UploadFile
+
+SKILL_KEYWORDS = {
+    "python",
+    "java",
+    "javascript",
+    "typescript",
+    "react",
+    "node",
+    "sql",
+    "postgresql",
+    "mysql",
+    "fastapi",
+    "django",
+    "flask",
+    "docker",
+    "kubernetes",
+    "aws",
+    "gcp",
+    "azure",
+    "terraform",
+    "kafka",
+    "spark",
+    "pandas",
+    "numpy",
+}
+
+
+def _extract_pdf_text(content: bytes) -> str:
+    with pdfplumber.open(io.BytesIO(content)) as pdf:
+        pages = [page.extract_text() or "" for page in pdf.pages]
+    return "\n".join(pages)
+
+
+def _extract_docx_text(content: bytes) -> str:
+    document = Document(io.BytesIO(content))
+    return "\n".join(paragraph.text for paragraph in document.paragraphs)
+
+
+def extract_skills(raw_text: str) -> List[str]:
+    tokens = set(re.findall(r"[a-zA-Z\+\#\.]{2,}", raw_text.lower()))
+    return sorted(skill for skill in SKILL_KEYWORDS if skill in tokens)
+
+
+def _guess_name(text: str) -> Optional[str]:
+    for line in text.splitlines():
+        candidate = line.strip()
+        if not candidate:
+            continue
+        words = candidate.split()
+        if 2 <= len(words) <= 6 and all(part[0].isalpha() for part in words if part):
+            return candidate
+    return None
+
 
 async def parse_cv(file: UploadFile) -> Tuple[Optional[str], str, List[str]]:
     content = await file.read()
-    text = ""
-    if file.filename.lower().endswith(".pdf"):
-        text = pdf_text(io.BytesIO(content))
+    filename = (file.filename or "").lower()
+
+    if filename.endswith(".pdf"):
+        text = _extract_pdf_text(content)
+    elif filename.endswith(".docx") or filename.endswith(".doc"):
+        text = _extract_docx_text(content)
     else:
-        try:
-            import docx2txt
-            text = docx2txt.process(io.BytesIO(content))
-        except Exception:
-            text = content.decode("utf-8", errors="ignore")
+        raise ValueError("Unsupported file type. Please upload PDF or DOCX files.")
 
-    # Heuristic name (dòng đầu không quá dài)
-    first_line = next((ln.strip() for ln in text.splitlines() if ln.strip()), "")
-    name_guess = first_line if 2 <= len(first_line.split()) <= 6 else None
-
-    # Extract skills (thường hóa)
-    tokens = set(re.findall(r"[a-zA-Z\+\#\.]{2,}", text.lower()))
-    skills = sorted(list(tokens & SKILL_DICT))
+    text = text or ""
+    skills = extract_skills(text)
+    name_guess = _guess_name(text)
     return name_guess, text, skills

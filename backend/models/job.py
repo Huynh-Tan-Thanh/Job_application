@@ -1,7 +1,11 @@
-from sqlalchemy.orm import Mapped, mapped_column
+﻿from __future__ import annotations
+
 from sqlalchemy import Integer, Text
-from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy.orm import Mapped, mapped_column
+
 from .database import Base
+from .types import SkillList
+
 
 class Job(Base):
     __tablename__ = "jobs"
@@ -11,4 +15,4 @@ class Job(Base):
     company: Mapped[str] = mapped_column(Text, nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
     location: Mapped[str] = mapped_column(Text, nullable=False)
-    skills: Mapped[list[str]] = mapped_column(ARRAY(Text), default=[])
+    skills: Mapped[list[str]] = mapped_column(SkillList(), default=list)
